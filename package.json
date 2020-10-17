@@ -6,7 +6,7 @@
     "start": "webpack-dev-server --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
     "lint": "eslint .",
-    "test": "jest --testPathPattern=./src/",
+    "test": "jest --testPathPattern=./src/ --passWithNoTests",
     "coverage": "jest --testPathPattern=./src/ --coverage"
   },
   "author": "coursar",
