@@ -1,2 +1,4 @@
-// eslint-disable-next-line no-console
-console.log('it works!');
+import HelpDeskWidget from './widgets/HelpDeskWidget';
+
+const helpDesk = new HelpDeskWidget(document.querySelector('.container'));
+helpDesk.bindToDOM();
