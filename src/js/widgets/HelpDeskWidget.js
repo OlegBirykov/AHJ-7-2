@@ -75,10 +75,26 @@ export default class PriceListWidget {
   }
 
   onAddButtonClick() {
-    if (!this.isActive) {
-      return;
-    }
-    this.editForm.updateProduct();
+    const xhr = new XMLHttpRequest();
+
+    xhr.open('GET', 'https://ahj-7-1.herokuapp.com?method=allTickets');
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        console.log(xhr.responseText);
+      } else {
+      // TODO: handle other status
+      }
+    });
+    xhr.addEventListener('error', () => {
+      // TODO: handle error
+    });
+    xhr.send();
+
+    //    if (!this.isActive) {
+    //      return;
+    //    }
+    //    this.editForm.updateProduct();
   }
 
   onListContainerClick(event) {
