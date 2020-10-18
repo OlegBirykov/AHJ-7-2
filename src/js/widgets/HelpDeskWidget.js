@@ -75,6 +75,7 @@ export default class PriceListWidget {
   }
 
   onAddButtonClick() {
+    console.log(this);
     const xhr = new XMLHttpRequest();
 
     xhr.open('GET', 'https://ahj-7-1.herokuapp.com?method=allTickets');
