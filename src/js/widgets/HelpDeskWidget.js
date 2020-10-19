@@ -1,5 +1,5 @@
-import EditForm from './EditForm';
-import DeleteForm from './DeleteForm';
+// import EditForm from './EditForm';
+// import DeleteForm from './DeleteForm';
 
 export default class PriceListWidget {
   constructor(parentEl) {
@@ -20,20 +20,6 @@ export default class PriceListWidget {
 
   static get markup() {
     return `
-      <div class="header">
-        <p class="icon" data-id="${this.ctrlId.add}">+</p>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <td class="name">Название</td>
-            <td class="price">Стоимость</td>
-            <td class="actions">Действия</td>
-          </tr>
-        </thead>
-        <tbody data-id="${this.ctrlId.list}">
-        </tbody>
-      </table>
     `;
   }
 
@@ -57,16 +43,16 @@ export default class PriceListWidget {
     this.form = document.createElement('form');
     this.form.className = 'price-list-form';
     this.form.dataset.widget = this.constructor.ctrlId.form;
-    this.form.innerHTML = this.constructor.markup;
+    // this.form.innerHTML = this.constructor.markup;
     this.parentEl.appendChild(this.form);
 
     this.addButton = this.form.querySelector(this.constructor.addSelector);
     this.listContainer = this.form.querySelector(this.constructor.listSelector);
 
-    this.editForm = new EditForm(this);
-    this.editForm.bindToDOM();
-    this.deleteForm = new DeleteForm(this);
-    this.deleteForm.bindToDOM();
+    // this.editForm = new EditForm(this);
+    // this.editForm.bindToDOM();
+    // this.deleteForm = new DeleteForm(this);
+    // this.deleteForm.bindToDOM();
 
     this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
     this.listContainer.addEventListener('click', this.onListContainerClick.bind(this));
@@ -75,27 +61,26 @@ export default class PriceListWidget {
   }
 
   onAddButtonClick() {
-    console.log(this);
-    const xhr = new XMLHttpRequest();
+    //    const xhr = new XMLHttpRequest();
 
-    xhr.open('GET', 'https://ahj-7-1.herokuapp.com?method=allTickets');
+    //    xhr.open('GET', 'https://ahj-7-1.herokuapp.com?method=allTickets');
 
-    xhr.addEventListener('load', () => {
-      if (xhr.status === 200) {
-        console.log(xhr.responseText);
-      } else {
-      // TODO: handle other status
-      }
-    });
-    xhr.addEventListener('error', () => {
-      // TODO: handle error
-    });
-    xhr.send();
+    //    xhr.addEventListener('load', () => {
+    //      if (xhr.status === 200) {
+    //        console.log(xhr.responseText);
+    //      } else {
+    // TODO: handle other status
+    //      }
+    //    });
+    //    xhr.addEventListener('error', () => {
+    // TODO: handle error
+    //    });
+    //    xhr.send();
 
-    //    if (!this.isActive) {
-    //      return;
-    //    }
-    //    this.editForm.updateProduct();
+    if (!this.isActive) {
+      return;
+    }
+    this.editForm.updateProduct();
   }
 
   onListContainerClick(event) {
