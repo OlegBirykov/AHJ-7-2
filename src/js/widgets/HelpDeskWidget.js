@@ -1,34 +1,68 @@
 // import EditForm from './EditForm';
 // import DeleteForm from './DeleteForm';
+import createRequest from '../api/request';
 
-export default class PriceListWidget {
+export default class HelpDeskWidget {
   constructor(parentEl) {
     this.parentEl = parentEl;
     this.productList = [];
-    this.isActive = true;
   }
 
   static get ctrlId() {
     return {
-      form: 'price-list-form',
-      list: 'product-list',
-      add: 'command-create',
-      edit: 'command-edit',
-      delete: 'command-delete',
+      widget: 'help-desk-widget',
+      add: 'button-add',
+      tickets: 'tickets',
+      ticket: 'ticket',
+      status: 'button-status',
+      name: 'name',
+      description: 'description',
+      created: 'created',
+      edit: 'button-edit',
+      delete: 'button-delete',
     };
   }
 
   static get markup() {
     return `
+      <div class="header">
+        <button class="help-desk-button" data-id="${this.ctrlId.add}">Добавить тикет</button>
+      </div>
+      <div data-id="${this.ctrlId.tickets}">
+      </div>
     `;
   }
 
-  static get listSelector() {
-    return `[data-id=${this.ctrlId.list}]`;
+  static get widgetSelector() {
+    return `[data-widget=${this.ctrlId.widget}]`;
   }
 
   static get addSelector() {
     return `[data-id=${this.ctrlId.add}]`;
+  }
+
+  static get ticketsSelector() {
+    return `[data-id=${this.ctrlId.tickets}]`;
+  }
+
+  static get ticketSelector() {
+    return `[data-id=${this.ctrlId.ticket}]`;
+  }
+
+  static get statusSelector() {
+    return `[data-id=${this.ctrlId.status}]`;
+  }
+
+  static get nameSelector() {
+    return `[data-id=${this.ctrlId.name}]`;
+  }
+
+  static get descriptionSelector() {
+    return `[data-id=${this.ctrlId.description}]`;
+  }
+
+  static get createdSelector() {
+    return `[data-id=${this.ctrlId.created}]`;
   }
 
   static get editSelector() {
@@ -40,54 +74,37 @@ export default class PriceListWidget {
   }
 
   bindToDOM() {
-    this.form = document.createElement('form');
-    this.form.className = 'price-list-form';
-    this.form.dataset.widget = this.constructor.ctrlId.form;
-    // this.form.innerHTML = this.constructor.markup;
-    this.parentEl.appendChild(this.form);
+    this.widget = document.createElement('div');
+    this.widget.dataset.widget = this.constructor.ctrlId.widget;
+    this.widget.innerHTML = this.constructor.markup;
+    this.parentEl.appendChild(this.widget);
 
-    this.addButton = this.form.querySelector(this.constructor.addSelector);
-    this.listContainer = this.form.querySelector(this.constructor.listSelector);
+    this.addButton = this.widget.querySelector(this.constructor.addSelector);
+    this.tickets = this.widget.querySelector(this.constructor.ticketsSelector);
 
     // this.editForm = new EditForm(this);
     // this.editForm.bindToDOM();
     // this.deleteForm = new DeleteForm(this);
     // this.deleteForm.bindToDOM();
 
-    this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
-    this.listContainer.addEventListener('click', this.onListContainerClick.bind(this));
+    //    this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
+    //    this.listContainer.addEventListener('click', this.onListContainerClick.bind(this));
 
-    this.redraw();
+    createRequest({
+      data: {
+        method: 'allTickets',
+      },
+      responseType: 'json',
+      method: 'GET',
+      callback: this.redraw.bind(this),
+    });
   }
 
   onAddButtonClick() {
-    //    const xhr = new XMLHttpRequest();
-
-    //    xhr.open('GET', 'https://ahj-7-1.herokuapp.com?method=allTickets');
-
-    //    xhr.addEventListener('load', () => {
-    //      if (xhr.status === 200) {
-    //        console.log(xhr.responseText);
-    //      } else {
-    // TODO: handle other status
-    //      }
-    //    });
-    //    xhr.addEventListener('error', () => {
-    // TODO: handle error
-    //    });
-    //    xhr.send();
-
-    if (!this.isActive) {
-      return;
-    }
     this.editForm.updateProduct();
   }
 
   onListContainerClick(event) {
-    if (!this.isActive) {
-      return;
-    }
-
     const { index } = event.target.closest('tr').dataset;
 
     if (event.target.dataset.id === this.constructor.ctrlId.edit) {
@@ -97,17 +114,38 @@ export default class PriceListWidget {
     }
   }
 
-  redraw() {
-    this.listContainer.innerHTML = this.productList.reduce((str, { name, price }, i) => `
+  redraw(response) {
+    this.tickets.innerHTML = response.reduce((str, {
+      id, status, name, created,
+    }) => `
       ${str}
-      <tr data-index="${i}">
-        <td class="name">${name}</td>
-        <td class="price">${price}</td>
-        <td class="actions">
-          <span class="icon" data-id="${this.constructor.ctrlId.edit}">&#x270E;</span>
-          <span class="icon delete" data-id="${this.constructor.ctrlId.delete}">&times;</span>
-        </td>
-      </tr>
+      <div data-id="${this.constructor.ctrlId.ticket}" data-index="${id}">
+        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.status">
+          ${status ? '&#x2713;' : '&#x00A0;'}
+        </button>
+        <div class="text">
+          <p data-id="this.constructor.ctrlId.name">
+            ${name}
+          </p>
+        </div>
+        <p data-id="this.constructor.ctrlId.created">
+          ${this.constructor.dateToString(created)}
+        </p>
+        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.edit">&#x270E;</button>
+        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.delete">&#x2716;</button>
+      </div>
     `, '');
+  }
+
+  static dateToString(timestamp) {
+    const date = new Date(timestamp);
+
+    const result = `0${date.getDate()
+    }.0${date.getMonth() + 1
+    }.0${date.getFullYear() % 100
+    } 0${date.getHours()
+    }:0${date.getMinutes()}`;
+
+    return result.replace(/\d(\d{2})/g, '$1');
   }
 }

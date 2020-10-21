@@ -113,11 +113,8 @@ body {
 .help-desk-modal-form form textarea {
   width: 100%;
   margin: 1em 0;
+  padding: 0.5em;
   border: 1px solid black;
-}
-
-.help-desk-modal-form form input {
-  height: 2em;
 }
 
 .help-desk-modal-form form .buttons {
