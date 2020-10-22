@@ -1,5 +1,5 @@
-// import EditForm from './EditForm';
-// import DeleteForm from './DeleteForm';
+import EditForm from './EditForm';
+import DeleteForm from './DeleteForm';
 import createRequest from '../api/request';
 
 export default class HelpDeskWidget {
@@ -82,13 +82,13 @@ export default class HelpDeskWidget {
     this.addButton = this.widget.querySelector(this.constructor.addSelector);
     this.tickets = this.widget.querySelector(this.constructor.ticketsSelector);
 
-    // this.editForm = new EditForm(this);
-    // this.editForm.bindToDOM();
-    // this.deleteForm = new DeleteForm(this);
-    // this.deleteForm.bindToDOM();
+    this.editForm = new EditForm(this);
+    this.editForm.bindToDOM();
+    this.deleteForm = new DeleteForm(this);
+    this.deleteForm.bindToDOM();
 
-    //    this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
-    //    this.listContainer.addEventListener('click', this.onListContainerClick.bind(this));
+    this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
+    this.tickets.addEventListener('click', this.onTicketsClick.bind(this));
 
     createRequest({
       data: {
@@ -100,41 +100,60 @@ export default class HelpDeskWidget {
     });
   }
 
-  onAddButtonClick() {
-    this.editForm.updateProduct();
+  onAddButtonClick(event) {
+    event.preventDefault();
+    this.editForm.show();
   }
 
-  onListContainerClick(event) {
-    const { index } = event.target.closest('tr').dataset;
+  onTicketsClick(event) {
+    event.preventDefault();
 
-    if (event.target.dataset.id === this.constructor.ctrlId.edit) {
-      this.editForm.updateProduct(index);
-    } else if (event.target.dataset.id === this.constructor.ctrlId.delete) {
-      this.deleteForm.deleteProduct(index);
+    switch (event.target.dataset.id) {
+      case this.constructor.ctrlId.status:
+        break;
+      case this.constructor.ctrlId.edit:
+        this.editForm.show(
+          event.target
+            .closest(this.constructor.ticketSelector)
+            .dataset.index,
+        );
+        break;
+      case this.constructor.ctrlId.delete:
+        this.deleteForm.show(
+          event.target
+            .closest(this.constructor.ticketSelector)
+            .dataset.index,
+        );
+        break;
+      default:
     }
   }
 
   redraw(response) {
     this.tickets.innerHTML = response.reduce((str, {
-      id, status, name, created,
+      id, status, created,
     }) => `
       ${str}
       <div data-id="${this.constructor.ctrlId.ticket}" data-index="${id}">
-        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.status">
+        <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.status}">
           ${status ? '&#x2713;' : '&#x00A0;'}
         </button>
         <div class="text">
-          <p data-id="this.constructor.ctrlId.name">
-            ${name}
+          <p data-id="${this.constructor.ctrlId.name}">
           </p>
         </div>
-        <p data-id="this.constructor.ctrlId.created">
+        <p data-id="${this.constructor.ctrlId.created}">
           ${this.constructor.dateToString(created)}
         </p>
-        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.edit">&#x270E;</button>
-        <button class="help-desk-ticket-button" data-id="this.constructor.ctrlId.delete">&#x2716;</button>
+        <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.edit}">&#x270E;</button>
+        <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.delete}">&#x2716;</button>
       </div>
     `, '');
+
+    this.tickets.querySelectorAll(this.constructor.nameSelector).forEach((item, i) => {
+      const name = item;
+      name.textContent = response[i].name;
+    });
   }
 
   static dateToString(timestamp) {

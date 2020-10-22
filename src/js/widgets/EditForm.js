@@ -1,119 +1,121 @@
+import createRequest from '../api/request';
+
 export default class EditForm {
   constructor(parentWidget) {
     this.parentWidget = parentWidget;
-  }
-
-  static get markup() {
-    return `
-      <label>Название<input type="text" name="name" data-id="${this.ctrlId.name}"></label>
-      <label>Стоимость<input type="text" name="price" data-id="${this.ctrlId.price}"></label>
-      <div class="buttons">
-        <button type="submit" data-id="${this.ctrlId.save}">Сохранить</button>
-        <button type="reset" data-id="${this.ctrlId.cancel}">Отмена</button>
-      </div>
-    `;
+    this.ticket = {};
   }
 
   static get ctrlId() {
     return {
       form: 'edit-form',
+      title: 'form-title',
       name: 'name',
-      price: 'price',
-      save: 'save',
-      cancel: 'cancel',
+      description: 'description',
+      ok: 'button-ok',
+      cancel: 'button-cancel',
     };
+  }
+
+  static get markup() {
+    return `
+      <form>
+        <label data-id="${this.ctrlId.title}">Добавить тикет</label>
+        <label>Краткое описание<input type="text" name="name" data-id="${this.ctrlId.name}" required></label>
+        <label>Подробное описание</label>
+        <textarea name="description" data-id="${this.ctrlId.description}" rows="3" required></textarea>
+        <div class="buttons">
+          <button class="help-desk-button" type="reset" data-id="${this.ctrlId.cancel}">Отмена</button>
+          <button class="help-desk-button" type="submit" data-id="${this.ctrlId.ok}">Ok</button>
+        </div>      
+      </form>
+    `;
+  }
+
+  static get formSelector() {
+    return `[data-widget=${this.ctrlId.form}]`;
+  }
+
+  static get titleSelector() {
+    return `[data-id=${this.ctrlId.title}]`;
   }
 
   static get nameSelector() {
     return `[data-id=${this.ctrlId.name}]`;
   }
 
-  static get priceSelector() {
-    return `[data-id=${this.ctrlId.price}]`;
-  }
-
-  static get saveSelector() {
-    return `[data-id=${this.ctrlId.save}]`;
+  static get descriptionSelector() {
+    return `[data-id=${this.ctrlId.description}]`;
   }
 
   static get cancelSelector() {
     return `[data-id=${this.ctrlId.cancel}]`;
   }
 
-  bindToDOM() {
-    this.form = document.createElement('form');
-    this.form.className = 'edit-form';
-    this.form.dataset.widget = this.constructor.ctrlId.form;
-    this.form.innerHTML = this.constructor.markup;
-    document.body.appendChild(this.form);
+  static get okSelector() {
+    return `[data-id=${this.ctrlId.ok}]`;
+  }
 
-    this.nameInput = this.form.querySelector(this.constructor.nameSelector);
-    this.priceInput = this.form.querySelector(this.constructor.priceSelector);
-    this.saveButton = this.form.querySelector(this.constructor.saveSelector);
-    this.cancelButton = this.form.querySelector(this.constructor.cancelSelector);
+  bindToDOM() {
+    this.container = document.createElement('div');
+    this.container.className = 'help-desk-modal-form';
+    this.container.dataset.widget = this.constructor.ctrlId.form;
+    this.container.innerHTML = this.constructor.markup;
+
+    document.body.appendChild(this.container);
+
+    this.form = this.container.querySelector('form');
+
+    this.title = this.form.querySelector(this.constructor.titleSelector);
+    this.name = this.form.querySelector(this.constructor.nameSelector);
+    this.description = this.form.querySelector(this.constructor.descriptionSelector);
+    this.ok = this.form.querySelector(this.constructor.okSelector);
 
     this.form.addEventListener('submit', this.onSubmit.bind(this));
     this.form.addEventListener('reset', this.onReset.bind(this));
-    window.addEventListener('resize', this.onResize.bind(this));
+    this.ok.addEventListener('click', this.validation.bind(this));
   }
 
   onSubmit(event) {
     event.preventDefault();
 
-    const product = {
-      name: this.nameInput.value,
-      price: this.priceInput.value,
-    };
-
-    //    const validName = validateName(product.name);
-    //    if (!validName.status) {
-    //      this.nameError.show(validName.error);
-    //      return;
-    //    }
-
-    //    const validPrice = validatePrice(product.price);
-    //    if (!validPrice.status) {
-    //      this.priceError.show(validPrice.error);
-    //      return;
-    //    }
-
-    //    product.name = validName.value;
-    //    product.price = validPrice.value;
-
-    if (this.index >= 0) {
-      this.parentWidget.productList[this.index] = product;
-    } else {
-      this.parentWidget.productList.push(product);
-    }
-    this.parentWidget.redraw();
+    createRequest({
+      data: {
+        method: 'createTicket',
+        id: this.id,
+        status: this.status,
+        name: this.name.value,
+        description: this.description.value,
+      },
+      responseType: 'json',
+      method: 'POST',
+      callback: this.parentWidget.redraw.bind(this.parentWidget),
+    });
 
     this.onReset();
   }
 
   onReset() {
-    this.form.classList.remove('active');
-    this.parentWidget.isActive = true;
+    this.container.classList.remove('modal-active');
   }
 
-  onResize() {
-    this.form.style.left = `${window.scrollX + window.innerWidth / 2 - this.form.offsetWidth / 2}px`;
-    this.form.style.top = `${window.scrollY + window.innerHeight / 2 - this.form.offsetHeight / 2}px`;
+  validation() {
+    this.name.value = this.name.value.trim();
+    this.description.value = this.description.value.trim();
   }
 
-  updateProduct(index = -1) {
-    this.parentWidget.isActive = false;
-    this.index = +index;
-
-    if (index >= 0) {
-      const { name, price } = this.parentWidget.productList[index];
-      this.nameInput.value = name;
-      this.priceInput.value = price;
+  show(id) {
+    if (id) {
+      this.title.textContent = 'Изменить тикет';
+      this.id = id;
     } else {
-      this.nameInput.value = '';
-      this.priceInput.value = '';
+      this.title.textContent = 'Добавить тикет';
+      this.id = '';
+      this.status = '';
+      this.name.value = '';
+      this.description.value = '';
     }
 
-    this.form.classList.add('active');
-    this.onResize();
+    this.container.classList.add('modal-active');
   }
 }

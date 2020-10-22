@@ -2,40 +2,34 @@ const createRequest = (options = {}) => {
   const {
     headers, data, responseType, method, callback,
   } = options;
-  const url = new URL('https://ahj-7-1.herokuapp.com');
+  const url = 'https://ahj-7-1.herokuapp.com';
 
-  if (method === 'GET') {
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        url.searchParams.set(key, data[key]);
-      }
+  const params = new URLSearchParams();
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      params.append(key, data[key]);
     }
   }
 
   const request = new XMLHttpRequest();
 
-  try {
-    request.open(method, url);
-    for (const header in headers) {
-      if (Object.prototype.hasOwnProperty.call(headers, header)) {
-        request.setRequestHeader(header, headers[header]);
-      }
-    }
-    request.responseType = responseType;
+  if (method === 'GET') {
+    request.open('GET', `${url}?${params}`);
+  } else {
+    request.open('POST', url);
+  }
 
-    if (method === 'GET') {
-      request.send();
-    } else {
-      const formData = new FormData();
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          formData.append(key, data[key]);
-        }
-      }
-      request.send(formData);
+  for (const header in headers) {
+    if (Object.prototype.hasOwnProperty.call(headers, header)) {
+      request.setRequestHeader(header, headers[header]);
     }
-  } catch (e) {
-    alert(e);
+  }
+  request.responseType = responseType;
+
+  if (method === 'GET') {
+    request.send();
+  } else {
+    request.send(params);
   }
 
   request.addEventListener('load', () => {

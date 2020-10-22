@@ -1,81 +1,86 @@
+import createRequest from '../api/request';
+
 export default class DeleteForm {
   constructor(parentWidget) {
     this.parentWidget = parentWidget;
   }
 
-  static get markup() {
-    return `
-      <p data-id="${this.ctrlId.text}"></p>
-      <div class="buttons">
-        <button type="submit" data-id="${this.ctrlId.delete}">Удалить</button>
-        <button type="reset" data-id="${this.ctrlId.cancel}">Отмена</button>
-      </div>
-    `;
-  }
-
   static get ctrlId() {
     return {
       form: 'delete-form',
-      text: 'text',
-      delete: 'delete',
-      cancel: 'cancel',
+      title: 'form-title',
+      cancel: 'button-cancel',
+      ok: 'button-ok',
     };
   }
 
-  static get textSelector() {
-    return `[data-id=${this.ctrlId.text}]`;
+  static get markup() {
+    return `
+      <form>
+        <label data-id="${this.ctrlId.title}">Удалить тикет</label>
+        <label>Вы уверены, что хотите удалить тикет? Это действие необратимо.</label>
+        <div class="buttons">
+          <button class="help-desk-button" type="reset" data-id="${this.ctrlId.cancel}">Отмена</button>
+          <button class="help-desk-button" type="submit" data-id="${this.ctrlId.ok}">Ok</button>
+        </div>      
+      </form>
+    `;
   }
 
-  static get deleteSelector() {
-    return `[data-id=${this.ctrlId.delete}]`;
+  static get formSelector() {
+    return `[data-widget=${this.ctrlId.form}]`;
+  }
+
+  static get titleSelector() {
+    return `[data-id=${this.ctrlId.title}]`;
   }
 
   static get cancelSelector() {
     return `[data-id=${this.ctrlId.cancel}]`;
   }
 
-  bindToDOM() {
-    this.form = document.createElement('form');
-    this.form.className = 'delete-form';
-    this.form.dataset.widget = this.constructor.ctrlId.form;
-    this.form.innerHTML = this.constructor.markup;
-    document.body.appendChild(this.form);
+  static get okSelector() {
+    return `[data-id=${this.ctrlId.ok}]`;
+  }
 
-    this.text = this.form.querySelector(this.constructor.textSelector);
-    this.deleteButton = this.form.querySelector(this.constructor.deleteSelector);
-    this.cancelButton = this.form.querySelector(this.constructor.cancelSelector);
+  bindToDOM() {
+    this.container = document.createElement('div');
+    this.container.className = 'help-desk-modal-form';
+    this.container.dataset.widget = this.constructor.ctrlId.form;
+    this.container.innerHTML = this.constructor.markup;
+
+    document.body.appendChild(this.container);
+
+    this.form = this.container.querySelector('form');
+
+    this.title = this.form.querySelector(this.constructor.titleSelector);
 
     this.form.addEventListener('submit', this.onSubmit.bind(this));
     this.form.addEventListener('reset', this.onReset.bind(this));
-    window.addEventListener('resize', this.onResize.bind(this));
   }
 
   onSubmit(event) {
     event.preventDefault();
 
-    this.parentWidget.productList.splice(this.index, 1);
-    this.parentWidget.redraw();
+    createRequest({
+      data: {
+        method: 'deleteTicket',
+        id: this.id,
+      },
+      responseType: 'json',
+      method: 'POST',
+      callback: this.parentWidget.redraw.bind(this.parentWidget),
+    });
 
     this.onReset();
   }
 
   onReset() {
-    this.form.classList.remove('active');
-    this.parentWidget.isActive = true;
+    this.container.classList.remove('modal-active');
   }
 
-  onResize() {
-    this.form.style.left = `${window.scrollX + window.innerWidth / 2 - this.form.offsetWidth / 2}px`;
-    this.form.style.top = `${window.scrollY + window.innerHeight / 2 - this.form.offsetHeight / 2}px`;
-  }
-
-  deleteProduct(index) {
-    this.parentWidget.isActive = false;
-    this.index = +index;
-
-    this.text.innerText = `Вы действительно хотите удалить этот чудесный товар "${this.parentWidget.productList[index].name}"?`;
-
-    this.form.classList.add('active');
-    this.onResize();
+  show(id) {
+    this.id = id;
+    this.container.classList.add('modal-active');
   }
 }
