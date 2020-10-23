@@ -1,6 +1,6 @@
 import EditForm from './EditForm';
 import DeleteForm from './DeleteForm';
-import createRequest from '../api/request';
+import runRequest from '../api/request';
 
 export default class HelpDeskWidget {
   constructor(parentEl) {
@@ -73,7 +73,7 @@ export default class HelpDeskWidget {
     return `[data-id=${this.ctrlId.delete}]`;
   }
 
-  bindToDOM() {
+  async bindToDOM() {
     this.widget = document.createElement('div');
     this.widget.dataset.widget = this.constructor.ctrlId.widget;
     this.widget.innerHTML = this.constructor.markup;
@@ -90,40 +90,39 @@ export default class HelpDeskWidget {
     this.addButton.addEventListener('click', this.onAddButtonClick.bind(this));
     this.tickets.addEventListener('click', this.onTicketsClick.bind(this));
 
-    createRequest({
+    const params = {
       data: {
         method: 'allTickets',
       },
       responseType: 'json',
       method: 'GET',
-      callback: this.redraw.bind(this),
-    });
+    };
+
+    try {
+      this.redraw(await runRequest(params));
+    } catch (error) {
+      alert(error);
+    }
   }
 
-  onAddButtonClick(event) {
+  async onAddButtonClick(event) {
     event.preventDefault();
-    this.editForm.show();
+    await this.editForm.show();
   }
 
-  onTicketsClick(event) {
+  async onTicketsClick(event) {
     event.preventDefault();
+
+    const ticket = event.target.closest(this.constructor.ticketSelector);
 
     switch (event.target.dataset.id) {
       case this.constructor.ctrlId.status:
         break;
       case this.constructor.ctrlId.edit:
-        this.editForm.show(
-          event.target
-            .closest(this.constructor.ticketSelector)
-            .dataset.index,
-        );
+        await this.editForm.show(ticket);
         break;
       case this.constructor.ctrlId.delete:
-        this.deleteForm.show(
-          event.target
-            .closest(this.constructor.ticketSelector)
-            .dataset.index,
-        );
+        this.deleteForm.show(ticket);
         break;
       default:
     }
@@ -135,16 +134,11 @@ export default class HelpDeskWidget {
     }) => `
       ${str}
       <div data-id="${this.constructor.ctrlId.ticket}" data-index="${id}">
-        <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.status}">
-          ${status ? '&#x2713;' : '&#x00A0;'}
-        </button>
+        <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.status}">${status ? '&#x2713;' : '&#x00A0;'}</button>
         <div class="text">
-          <p data-id="${this.constructor.ctrlId.name}">
-          </p>
+          <p data-id="${this.constructor.ctrlId.name}"></p>
         </div>
-        <p data-id="${this.constructor.ctrlId.created}">
-          ${this.constructor.dateToString(created)}
-        </p>
+        <p data-id="${this.constructor.ctrlId.created}">${this.constructor.dateToString(created)}</p>
         <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.edit}">&#x270E;</button>
         <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.delete}">&#x2716;</button>
       </div>
@@ -166,5 +160,23 @@ export default class HelpDeskWidget {
     }:0${date.getMinutes()}`;
 
     return result.replace(/\d(\d{2})/g, '$1');
+  }
+
+  static async getDescription(id) {
+    const params = {
+      data: {
+        method: 'ticketById',
+        id,
+      },
+      responseType: 'text',
+      method: 'GET',
+    };
+
+    try {
+      return await runRequest(params);
+    } catch (error) {
+      alert(error);
+      return null;
+    }
   }
 }

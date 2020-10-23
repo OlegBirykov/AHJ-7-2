@@ -1,4 +1,4 @@
-import createRequest from '../api/request';
+import runRequest from '../api/request';
 
 export default class EditForm {
   constructor(parentWidget) {
@@ -76,10 +76,10 @@ export default class EditForm {
     this.ok.addEventListener('click', this.validation.bind(this));
   }
 
-  onSubmit(event) {
+  async onSubmit(event) {
     event.preventDefault();
 
-    createRequest({
+    const params = {
       data: {
         method: 'createTicket',
         id: this.id,
@@ -89,8 +89,13 @@ export default class EditForm {
       },
       responseType: 'json',
       method: 'POST',
-      callback: this.parentWidget.redraw.bind(this.parentWidget),
-    });
+    };
+
+    try {
+      this.parentWidget.redraw(await runRequest(params));
+    } catch (error) {
+      alert(error);
+    }
 
     this.onReset();
   }
@@ -104,10 +109,17 @@ export default class EditForm {
     this.description.value = this.description.value.trim();
   }
 
-  show(id) {
-    if (id) {
+  async show(ticket) {
+    if (ticket) {
       this.title.textContent = 'Изменить тикет';
-      this.id = id;
+      this.id = ticket.dataset.index;
+
+      const status = ticket.querySelector(this.parentWidget.constructor.statusSelector);
+      this.status = status.textContent === '\u2713' ? '1' : '';
+
+      const name = ticket.querySelector(this.parentWidget.constructor.nameSelector);
+      this.name.value = name.textContent;
+      this.description.value = await this.parentWidget.constructor.getDescription(this.id);
     } else {
       this.title.textContent = 'Добавить тикет';
       this.id = '';

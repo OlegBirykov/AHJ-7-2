@@ -1,4 +1,4 @@
-import createRequest from '../api/request';
+import runRequest from '../api/request';
 
 export default class DeleteForm {
   constructor(parentWidget) {
@@ -59,18 +59,23 @@ export default class DeleteForm {
     this.form.addEventListener('reset', this.onReset.bind(this));
   }
 
-  onSubmit(event) {
+  async onSubmit(event) {
     event.preventDefault();
 
-    createRequest({
+    const params = {
       data: {
         method: 'deleteTicket',
         id: this.id,
       },
       responseType: 'json',
       method: 'POST',
-      callback: this.parentWidget.redraw.bind(this.parentWidget),
-    });
+    };
+
+    try {
+      this.parentWidget.redraw(await runRequest(params));
+    } catch (error) {
+      alert(error);
+    }
 
     this.onReset();
   }
@@ -79,8 +84,8 @@ export default class DeleteForm {
     this.container.classList.remove('modal-active');
   }
 
-  show(id) {
-    this.id = id;
+  show(ticket) {
+    this.id = ticket.dataset.index;
     this.container.classList.add('modal-active');
   }
 }
