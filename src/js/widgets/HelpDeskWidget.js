@@ -15,6 +15,7 @@ export default class HelpDeskWidget {
       tickets: 'tickets',
       ticket: 'ticket',
       status: 'button-status',
+      text: 'text',
       name: 'name',
       description: 'description',
       created: 'created',
@@ -51,6 +52,10 @@ export default class HelpDeskWidget {
 
   static get statusSelector() {
     return `[data-id=${this.ctrlId.status}]`;
+  }
+
+  static get textSelector() {
+    return `[data-id=${this.ctrlId.text}]`;
   }
 
   static get nameSelector() {
@@ -117,14 +122,19 @@ export default class HelpDeskWidget {
 
     switch (event.target.dataset.id) {
       case this.constructor.ctrlId.status:
+        await this.invertStatus(ticket);
         break;
+
       case this.constructor.ctrlId.edit:
         await this.editForm.show(ticket);
         break;
+
       case this.constructor.ctrlId.delete:
         this.deleteForm.show(ticket);
         break;
+
       default:
+        await this.constructor.invertVisibleDescription(ticket);
     }
   }
 
@@ -135,7 +145,7 @@ export default class HelpDeskWidget {
       ${str}
       <div data-id="${this.constructor.ctrlId.ticket}" data-index="${id}">
         <button class="help-desk-ticket-button" data-id="${this.constructor.ctrlId.status}">${status ? '&#x2713;' : '&#x00A0;'}</button>
-        <div class="text">
+        <div class="text" data-id="${this.constructor.ctrlId.text}">
           <p data-id="${this.constructor.ctrlId.name}"></p>
         </div>
         <p data-id="${this.constructor.ctrlId.created}">${this.constructor.dateToString(created)}</p>
@@ -177,6 +187,46 @@ export default class HelpDeskWidget {
     } catch (error) {
       alert(error);
       return null;
+    }
+  }
+
+  async invertStatus(ticket) {
+    const id = ticket.dataset.index;
+    const status = ticket.querySelector(this.constructor.statusSelector);
+    const name = ticket.querySelector(this.constructor.nameSelector);
+
+    const params = {
+      data: {
+        method: 'createTicket',
+        id,
+        status: status.textContent === '\u2713' ? '' : '1',
+        name: name.textContent,
+        description: await this.constructor.getDescription(id),
+      },
+      responseType: 'json',
+      method: 'POST',
+    };
+
+    try {
+      this.redraw(await runRequest(params));
+    } catch (error) {
+      alert(error);
+    }
+  }
+
+  static async invertVisibleDescription(ticket) {
+    const textContainer = ticket.querySelector(this.textSelector);
+    let description = ticket.querySelector(this.descriptionSelector);
+
+    if (description) {
+      textContainer.removeChild(description);
+      description = null;
+    } else {
+      description = document.createElement('p');
+      description.dataset.id = this.ctrlId.description;
+      textContainer.appendChild(description);
+
+      description.textContent = await this.getDescription(ticket.dataset.index);
     }
   }
 }
